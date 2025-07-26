@@ -1,0 +1,45 @@
+{
+  "functions": {
+    "source": "functions",
+    "codebase": "default",  // ADDED: Explicit codebase for clarity
+    "runtime": "nodejs20",
+    "region": "us-central1",  // ADDED: Matches your project region
+    "predeploy": [
+      "npm --prefix \"$RESOURCE_DIR\" run lint",
+      "npm --prefix \"$RESOURCE_DIR\" run build"
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": "api"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [  // ADDED: Basic CORS for API routes
+      {
+        "source": "/api/**",
+        "headers": [
+          { "key": "Access-Control-Allow-Origin", "value": "*" },
+          { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+          { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+        ]
+      }
+    ],
+    "trailingSlash": false  // ADDED: Prevent trailing slash issues
+  }
+}

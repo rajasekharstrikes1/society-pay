@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,  // Added for better import handling (e.g., Razorpay)
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "lib",  // Outputs compiled JS to lib/ (matches your package.json)
+    "rootDir": "src",  // Added: Assumes sources are in src/ relative to this file
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2020",  // Updated to es2020 for Node 20 features (safe upgrade)
+    "allowJs": true,  // Added: Allows mixing JS files if needed
+    "skipLibCheck": true,  // Added: Speeds up compilation by skipping node_modules checks
+    "typeRoots": ["./node_modules/@types", "./types"]  // Added: For custom types like razorpay.d.ts (adjust path if needed)
+  },
+  "compileOnSave": true,
+  "include": ["src"],  // Kept, but ensure your TS files are in functions/src/
+  "exclude": ["node_modules", "lib"]  // Added: Excludes output and deps for cleaner builds
+}

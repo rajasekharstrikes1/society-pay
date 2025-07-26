@@ -1,0 +1,157 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ────────────── Utility Functions ──────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null ? userDoc.data : null;  // FIXED: Handle missing user doc
+    }
+
+    function isSuperAdmin() {
+      let user = getUserData();
+      return user != null && user.role == 'super_admin';
+    }
+
+    function isCommunityAdmin() {
+      let user = getUserData();
+      return user != null && user.role == 'community_admin';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function belongsToUserCommunity(communityId) {
+      let user = getUserData();
+      return user != null && user.communityId == communityId;
+    }
+
+    function isBackend() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'service_account';
+    }
+
+    function isValidSubscription() {
+      // FIXED: Check request for creates/updates
+      let subId = exists(/databases/$(database)/documents/subscriptions/$(request.resource.data.subscriptionId));
+      return subId;
+    }
+
+    // ────────────── Collection Rules ──────────────
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isSuperAdmin();
+      allow write, create: if isOwner(userId) || isSuperAdmin();
+      allow delete: if isSuperAdmin();  // FIXED: Allow super admin deletes if needed
+    }
+
+    // Subscription plans
+    match /subscriptions/{subscriptionId} {
+      allow read: if isSuperAdmin() || isCommunityAdmin();  // FIXED: Restrict reads to admins
+      allow write: if isSuperAdmin();
+    }
+
+    // Platform-wide settings
+    match /platformSettings/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+
+    // Community-specific settings
+    match /communitySettings/{settingId} {
+      allow read: if isAuthenticated() && 
+        (isSuperAdmin() || belongsToUserCommunity(resource.data.communityId));
+      allow write: if isSuperAdmin() || 
+        (isCommunityAdmin() && belongsToUserCommunity(resource.data.communityId));
+    }
+
+    // Razorpay orders
+    match /orders/{orderId} {
+      allow read: if isOwner(resource.data.userId) || isSuperAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isBackend();
+    }
+
+    // Payment records
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() &&
+        (isSuperAdmin() || 
+         belongsToUserCommunity(resource.data.communityId) ||
+         isOwner(resource.data.userId));
+      
+      allow create: if isBackend();
+      allow update: if isBackend() || isSuperAdmin();
+      allow delete: if false;
+    }
+
+    // Subscription payments
+    match /subscription_payments/{paymentId} {
+      allow read: if isAuthenticated() &&
+        (isSuperAdmin() || 
+         isOwner(resource.data.userId) ||
+         belongsToUserCommunity(resource.data.communityId));
+      
+      allow create: if (isBackend() || isAuthenticated()) && isValidSubscription();
+      allow update: if isBackend() || isSuperAdmin();
+      allow delete: if false;
+    }
+
+    // Community data
+    match /communities/{communityId} {
+      allow read: if isAuthenticated() &&
+        (isSuperAdmin() || belongsToUserCommunity(communityId));
+      
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin() || 
+        (isCommunityAdmin() && belongsToUserCommunity(communityId));
+      
+      // Subcollection for subscription status
+      match /subscription/{subId} {
+        allow read: if isAuthenticated();
+        allow write: if isBackend();
+      }
+    }
+
+    // Blocks within communities
+    match /blocks/{blockId} {
+      allow read: if isAuthenticated() &&
+        (isSuperAdmin() || belongsToUserCommunity(resource.data.communityId));
+      allow write: if isSuperAdmin() || 
+        (isCommunityAdmin() && belongsToUserCommunity(resource.data.communityId));
+    }
+
+    // Flats within blocks
+    match /flats/{flatId} {
+      allow read: if isAuthenticated() &&
+        (isSuperAdmin() || belongsToUserCommunity(resource.data.communityId));
+      allow write: if isSuperAdmin() || 
+        (isCommunityAdmin() && belongsToUserCommunity(resource.data.communityId));
+    }
+
+    // Tenant records
+    match /tenants/{tenantId} {
+      allow read: if isAuthenticated() &&
+        (isSuperAdmin() || belongsToUserCommunity(resource.data.communityId));
+      allow write: if isSuperAdmin() || 
+        (isCommunityAdmin() && belongsToUserCommunity(resource.data.communityId));
+    }
+
+    // WhatsApp templates
+    match /whatsapp_templates/{templateId} {
+      allow read: if isAuthenticated() &&
+        (isSuperAdmin() || belongsToUserCommunity(resource.data.communityId));
+      allow write: if isSuperAdmin() || 
+        (isCommunityAdmin() && belongsToUserCommunity(resource.data.communityId));
+    }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
