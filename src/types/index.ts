@@ -6,7 +6,7 @@ export interface User {
   email: string;
   name: string;
   phone: string;
-  role: 'super_admin' | 'community_admin' | 'tenant';
+  role: 'super_admin' | 'community_admin' | 'resident';
   communityId?: string;
   isActive: boolean;
   createdAt: Date;
@@ -25,7 +25,7 @@ export interface Community {
   subscriptionStartDate?: Date;
   subscriptionEndDate?: Date;
   isActive: boolean;
-  totalTenants: number;
+  totalResidents: number;
   totalBlocks: number;
   settings: CommunitySettings;
   createdAt: Date;
@@ -56,7 +56,7 @@ export interface Subscription {
   price: number;
   duration: number; // in months
   features: string[];
-  maxTenants: number;
+  maxResidents: number;
   isActive: boolean;
   createdAt: Date;
 }
@@ -87,11 +87,11 @@ export interface Flat {
   communityId: string;
   blockId: string;
   flatNumber: string;
-  tenantId?: string;
+  residentId?: string;
   createdAt: Date;
 }
 
-export interface Tenant {
+export interface Resident {
   id: string;
   communityId: string;
   blockId: string;
@@ -108,7 +108,7 @@ export interface Tenant {
 export interface MaintenanceRecord {
   id: string;
   communityId: string;
-  tenantId: string;
+  residentId: string;
   month: string;
   year: number;
   amount: number;
@@ -125,7 +125,7 @@ export interface MaintenanceRecord {
 export interface Payment {
   id: string;
   communityId: string;
-  tenantId: string;
+  residentId: string;
   maintenanceId: string;
   amount: number;
   razorpayPaymentId: string;
@@ -135,7 +135,7 @@ export interface Payment {
 }
 
 export interface DashboardStats {
-  totalTenants: number;
+  totalResidents: number;
   totalMonthlyMaintenance: number;
   totalPaid: number;
   totalDue: number;

@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Users, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
 import StatCard from '../../components/Dashboard/StatCard';
-import { dashboardService, paymentService, tenantService } from '../../services/firebase';
+import { dashboardService, paymentService, residentService } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Payment } from '../../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 interface DashboardStats {
-  totalTenants: number;
+  totalResidents: number;
   totalMonthlyMaintenance: number;
   totalPaid: number;
   totalDue: number;
@@ -15,14 +15,14 @@ interface DashboardStats {
 }
 
 interface RecentPayment extends Payment {
-  tenantName?: string;
+  residentName?: string;
   flatNumber?: string;
 }
 
 export default function CommunityAdminDashboard() {
   const { userProfile } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
-    totalTenants: 0,
+    totalResidents: 0,
     totalMonthlyMaintenance: 0,
     totalPaid: 0,
     totalDue: 0,
@@ -39,21 +39,21 @@ export default function CommunityAdminDashboard() {
       setLoading(true);
 
       // Fetch real data from Firebase
-      const [dashboardStats, payments, tenantsData] = await Promise.all([
+      const [dashboardStats, payments, residentsData] = await Promise.all([
         dashboardService.getCommunityAdminStats(userProfile.communityId),
         paymentService.getPayments(userProfile.communityId, 10),
-        tenantService.getTenants(userProfile.communityId)
+        residentService.getResidents(userProfile.communityId)
       ]);
 
       setStats(dashboardStats);
 
-      // Enhance payments with tenant details
+      // Enhance payments with resident details
       const paymentsWithDetails = payments.map(payment => {
-        const tenant = tenantsData.find(t => t.id === payment.tenantId);
+        const resident = residentsData.find(t => t.id === payment.residentId);
         return {
           ...payment,
-          tenantName: tenant?.name || 'Unknown',
-          flatNumber: tenant?.flatNumber || 'N/A'
+          residentName: resident?.name || 'Unknown',
+          flatNumber: resident?.flatNumber || 'N/A'
         };
       });
 
@@ -116,8 +116,8 @@ export default function CommunityAdminDashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
-          title="Total Tenants"
-          value={stats.totalTenants.toString()}
+          title="Total Residents"
+          value={stats.totalResidents.toString()}
           icon={Users}
           change="+3 new this month"
           changeType="positive"
@@ -140,7 +140,7 @@ export default function CommunityAdminDashboard() {
           title="Pending Amount"
           value={`₹${stats.totalDue.toLocaleString()}`}
           icon={AlertCircle}
-          change={`${Math.round(stats.totalDue / (stats.totalMonthlyMaintenance / stats.totalTenants || 1))} tenants pending`}
+          change={`${Math.round(stats.totalDue / (stats.totalMonthlyMaintenance / stats.totalResidents || 1))} residents pending`}
           changeType="negative"
         />
       </div>
@@ -223,7 +223,7 @@ export default function CommunityAdminDashboard() {
                 recentPayments.map((payment, index) => (
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{payment.tenantName}</div>
+                      <div className="text-sm font-medium text-gray-900">{payment.residentName}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{payment.flatNumber}</div>

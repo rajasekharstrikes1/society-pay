@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Send, Download, Calendar, DollarSign, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { maintenanceService, tenantService } from '../../services/firebase';
-import { MaintenanceRecord, Tenant } from '../../types';
+import { maintenanceService, residentService } from '../../services/firebase';
+import { MaintenanceRecord, Resident } from '../../types';
 
 // FIXED: Added proper type for filter status instead of using 'any'
 type FilterStatus = 'all' | 'pending' | 'paid' | 'overdue';
@@ -10,7 +10,7 @@ type FilterStatus = 'all' | 'pending' | 'paid' | 'overdue';
 export default function Maintenance() {
   const { userProfile } = useAuth();
   const [maintenanceRecords, setMaintenanceRecords] = useState<MaintenanceRecord[]>([]);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [residents, setResidents] = useState<Resident[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleString('default', { month: 'long' }));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -30,16 +30,16 @@ export default function Maintenance() {
 
     try {
       setLoading(true);
-      const [records, tenantsData] = await Promise.all([
+      const [records, residentsData] = await Promise.all([
         maintenanceService.getMaintenanceRecords(userProfile.communityId, {
           month: selectedMonth,
           year: selectedYear
         }),
-        tenantService.getTenants(userProfile.communityId)
+        residentService.getResidents(userProfile.communityId)
       ]);
 
       setMaintenanceRecords(records);
-      setTenants(tenantsData);
+      setResidents(residentsData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -78,12 +78,12 @@ export default function Maintenance() {
 
   const exportMaintenanceReport = () => {
     const csvContent = [
-      ['Tenant Name', 'Flat Number', 'Amount', 'GST', 'Handling Charges', 'Total', 'Status', 'Due Date'].join(','),
+      ['Resident Name', 'Flat Number', 'Amount', 'GST', 'Handling Charges', 'Total', 'Status', 'Due Date'].join(','),
       ...filteredRecords.map(record => {
-        const tenant = tenants.find(t => t.id === record.tenantId);
+        const resident = residents.find(t => t.id === record.residentId);
         return [
-          tenant?.name || 'Unknown',
-          tenant?.flatNumber || 'N/A',
+          resident?.name || 'Unknown',
+          resident?.flatNumber || 'N/A',
           record.amount,
           record.gstAmount,
           record.handlingCharges,
@@ -281,19 +281,19 @@ export default function Maintenance() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRecords.map((record) => {
-                const tenant = tenants.find(t => t.id === record.tenantId);
+                const resident = residents.find(t => t.id === record.residentId);
                 return (
                   <tr key={record.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {tenant?.name || 'Unknown'}
+                        {resident?.name || 'Unknown'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {tenant?.email}
+                        {resident?.email}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{tenant?.flatNumber}</div>
+                      <div className="text-sm text-gray-900">{resident?.flatNumber}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">₹{record.amount.toLocaleString()}</div>
@@ -375,7 +375,7 @@ export default function Maintenance() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                 <p className="text-sm text-blue-700">
-                  This will generate maintenance records for all active tenants for {selectedMonth} {selectedYear}.
+                  This will generate maintenance records for all active residents for {selectedMonth} {selectedYear}.
                 </p>
               </div>
             </div>

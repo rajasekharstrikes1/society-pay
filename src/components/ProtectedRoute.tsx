@@ -8,7 +8,7 @@ import { shouldBypassSubscriptionCheck } from '../utils/subscriptionUtils';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'super_admin' | 'community_admin' | 'tenant';
+  requiredRole?: 'super_admin' | 'community_admin' | 'resident';
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {

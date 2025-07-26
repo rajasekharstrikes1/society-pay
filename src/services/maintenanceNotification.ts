@@ -1,9 +1,9 @@
 import { whatsappService } from './whatsapp';
-import { Tenant, MaintenanceRecord } from '../types';
+import { Resident, MaintenanceRecord } from '../types';
 
 export class MaintenanceNotificationService {
   async sendMaintenanceReminder(
-    tenant: Tenant,
+    resident: Resident,
     maintenanceRecord: MaintenanceRecord,
     paymentLink: string,
     communityName: string
@@ -16,9 +16,9 @@ export class MaintenanceNotificationService {
       });
 
       await whatsappService.sendMaintenanceNotification(
-        tenant.phone,
-        tenant.name,
-        tenant.flatNumber,
+        resident.phone,
+        resident.name,
+        resident.flatNumber,
         maintenanceRecord.totalAmount,
         dueDate,
         paymentLink,
@@ -33,15 +33,15 @@ export class MaintenanceNotificationService {
   }
 
   async sendPaymentConfirmation(
-    tenant: Tenant,
+    resident: Resident,
     amount: number,
     transactionId: string,
     communityName: string
   ): Promise<boolean> {
     try {
       await whatsappService.sendPaymentConfirmation(
-        tenant.phone,
-        tenant.name,
+        resident.phone,
+        resident.name,
         amount,
         transactionId,
         communityName
@@ -55,24 +55,24 @@ export class MaintenanceNotificationService {
   }
 
   async sendBulkReminders(
-    tenants: Tenant[],
+    residents: Resident[],
     maintenanceRecords: MaintenanceRecord[],
     communityName: string,
-    generatePaymentLink: (tenantId: string, maintenanceId: string) => string
+    generatePaymentLink: (residentId: string, maintenanceId: string) => string
   ): Promise<{ success: number; failed: number }> {
     let success = 0;
     let failed = 0;
 
-    for (const tenant of tenants) {
+    for (const resident of residents) {
       const maintenanceRecord = maintenanceRecords.find(
-        record => record.tenantId === tenant.id && record.status === 'pending'
+        record => record.residentId === resident.id && record.status === 'pending'
       );
 
       if (maintenanceRecord) {
-        const paymentLink = generatePaymentLink(tenant.id, maintenanceRecord.id);
+        const paymentLink = generatePaymentLink(resident.id, maintenanceRecord.id);
         
         const sent = await this.sendMaintenanceReminder(
-          tenant,
+          resident,
           maintenanceRecord,
           paymentLink,
           communityName
@@ -93,16 +93,16 @@ export class MaintenanceNotificationService {
   }
 
   async sendOverdueNotices(
-    tenants: Tenant[],
+    residents: Resident[],
     overdueRecords: MaintenanceRecord[],
     communityName: string
   ): Promise<{ success: number; failed: number }> {
     let success = 0;
     let failed = 0;
 
-    for (const tenant of tenants) {
+    for (const resident of residents) {
       const overdueRecord = overdueRecords.find(
-        record => record.tenantId === tenant.id && record.status === 'overdue'
+        record => record.residentId === resident.id && record.status === 'overdue'
       );
 
       if (overdueRecord) {
@@ -112,13 +112,13 @@ export class MaintenanceNotificationService {
           );
 
           await whatsappService.sendTextMessage(
-            tenant.phone,
-            `Dear ${tenant.name},\n\nYour maintenance payment for Flat ${tenant.flatNumber} in ${communityName} is overdue by ${daysPastDue} days.\n\nAmount Due: ₹${overdueRecord.totalAmount.toLocaleString()}\n\nPlease make the payment immediately to avoid any inconvenience.\n\nThank you,\n${communityName} Management`
+            resident.phone,
+            `Dear ${resident.name},\n\nYour maintenance payment for Flat ${resident.flatNumber} in ${communityName} is overdue by ${daysPastDue} days.\n\nAmount Due: ₹${overdueRecord.totalAmount.toLocaleString()}\n\nPlease make the payment immediately to avoid any inconvenience.\n\nThank you,\n${communityName} Management`
           );
 
           success++;
         } catch (error) {
-          console.error(`Error sending overdue notice to ${tenant.name}:`, error);
+          console.error(`Error sending overdue notice to ${resident.name}:`, error);
           failed++;
         }
 

@@ -25,7 +25,7 @@ const superAdminNavItems = [
 const communityAdminNavItems = [
   { icon: Home, label: 'Dashboard', href: '/admin' },
   { icon: Building2, label: 'Blocks & Flats', href: '/admin/blocks' },
-  { icon: Users, label: 'Tenants', href: '/admin/tenants' },
+  { icon: Users, label: 'Residents', href: '/admin/residents' },
   { icon: CreditCard, label: 'Maintenance', href: '/admin/maintenance' },
   { icon: Bell, label: 'Notifications', href: '/admin/notifications' },
   { icon: BarChart3, label: 'Reports', href: '/admin/reports' },
