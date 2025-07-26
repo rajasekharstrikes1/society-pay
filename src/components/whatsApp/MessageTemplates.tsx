@@ -9,7 +9,7 @@ interface MessageTemplatesProps {
 
 // --- FIXED: Added specific type instead of 'any' ---
 interface TemplatePreviewData {
-  tenantName: string;
+  residentName: string;
   flatNumber: string;
   communityName: string;
   amount: string;
@@ -24,7 +24,7 @@ const renderTemplatePreview = (template: WhatsAppTemplate | null, previewData: T
   // This helper function replaces placeholders in the template text
   const replacePlaceholders = (text: string) => {
     return text
-      .replace(/\{\{1\}\}/g, previewData.tenantName)
+      .replace(/\{\{1\}\}/g, previewData.residentName)
       .replace(/\{\{2\}\}/g, previewData.flatNumber)
       .replace(/\{\{3\}\}/g, previewData.communityName)
       .replace(/\{\{4\}\}/g, `₹${previewData.amount}`)
@@ -65,7 +65,7 @@ export default function MessageTemplates({ communityId }: MessageTemplatesProps)
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<WhatsAppTemplate | null>(null);
   const [previewData, setPreviewData] = useState<TemplatePreviewData>({
-    tenantName: "John Doe",
+    residentName: "John Doe",
     flatNumber: "A-101",
     communityName: "Green Valley Apartments",
     amount: "3000",
@@ -142,9 +142,9 @@ export default function MessageTemplates({ communityId }: MessageTemplatesProps)
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="text"
-                    placeholder="Tenant Name"
-                    value={previewData.tenantName}
-                    onChange={(e) => setPreviewData({...previewData, tenantName: e.target.value})}
+                    placeholder="Resident Name"
+                    value={previewData.residentName}
+                    onChange={(e) => setPreviewData({...previewData, residentName: e.target.value})}
                     className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                   <input

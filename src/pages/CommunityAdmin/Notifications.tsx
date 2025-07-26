@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Send, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { tenantService } from '../../services/firebase';
+import { residentService } from '../../services/firebase';
 import { maintenanceNotificationService } from '../../services/maintenanceNotification';
-import { Tenant } from '../../types';
+import { Resident } from '../../types';
 
 // FIXED: Added proper type for message type instead of using 'any'
 type MessageType = 'maintenance_reminder' | 'payment_confirmation' | 'general';
@@ -19,8 +19,8 @@ interface NotificationHistory {
 
 export default function Notifications() {
   const { userProfile } = useAuth();
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [selectedTenants, setSelectedTenants] = useState<string[]>([]);
+  const [residents, setResidents] = useState<Resident[]>([]);
+  const [selectedResidents, setSelectedResidents] = useState<string[]>([]);
   const [notificationHistory, setNotificationHistory] = useState<NotificationHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -35,8 +35,8 @@ export default function Notifications() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const tenantsData = await tenantService.getTenants(userProfile?.communityId || '');
-      setTenants(tenantsData.filter(t => t.isActive));
+      const residentsData = await residentService.getResidents(userProfile?.communityId || '');
+      setResidents(residentsData.filter(t => t.isActive));
 
       // Mock notification history
       const mockHistory: NotificationHistory[] = [
@@ -81,36 +81,36 @@ export default function Notifications() {
   }, [userProfile?.communityId, fetchData]);
 
   const handleSelectAll = () => {
-    if (selectedTenants.length === tenants.length) {
-      setSelectedTenants([]);
+    if (selectedResidents.length === residents.length) {
+      setSelectedResidents([]);
     } else {
-      setSelectedTenants(tenants.map(t => t.id));
+      setSelectedResidents(residents.map(t => t.id));
     }
   };
 
-  const handleTenantSelect = (tenantId: string) => {
-    setSelectedTenants(prev => 
-      prev.includes(tenantId) 
-        ? prev.filter(id => id !== tenantId)
-        : [...prev, tenantId]
+  const handleResidentSelect = (residentId: string) => {
+    setSelectedResidents(prev => 
+      prev.includes(residentId) 
+        ? prev.filter(id => id !== residentId)
+        : [...prev, residentId]
     );
   };
 
   const handleSendMessage = async () => {
-    if (selectedTenants.length === 0 || !messageForm.message.trim()) {
-      alert('Please select tenants and enter a message');
+    if (selectedResidents.length === 0 || !messageForm.message.trim()) {
+      alert('Please select residents and enter a message');
       return;
     }
 
     try {
       setSending(true);
       
-      // Send messages to selected tenants
-      const selectedTenantData = tenants.filter(t => selectedTenants.includes(t.id));
+      // Send messages to selected residents
+      const selectedResidentData = residents.filter(t => selectedResidents.includes(t.id));
       
-      for (const tenant of selectedTenantData) {
+      for (const resident of selectedResidentData) {
         // Here you would integrate with your WhatsApp service
-        console.log(`Sending message to ${tenant.name}: ${messageForm.message}`);
+        console.log(`Sending message to ${resident.name}: ${messageForm.message}`);
         
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -120,7 +120,7 @@ export default function Notifications() {
       const newNotification: NotificationHistory = {
         id: Date.now().toString(),
         type: messageForm.type,
-        recipients: selectedTenants.length,
+        recipients: selectedResidents.length,
         sentAt: new Date(),
         status: 'sent',
         message: messageForm.message
@@ -130,7 +130,7 @@ export default function Notifications() {
       
       // Reset form
       setMessageForm({ type: 'general', message: '', includePaymentLink: false });
-      setSelectedTenants([]);
+      setSelectedResidents([]);
       
       alert('Messages sent successfully!');
     } catch (error) {
@@ -147,10 +147,10 @@ export default function Notifications() {
       
       // This would integrate with your maintenance service
       const result = await maintenanceNotificationService.sendBulkReminders(
-        tenants,
+        residents,
         [], // maintenance records would be fetched here
         userProfile?.communityId || '',
-        (tenantId, maintenanceId) => `https://pay.societypay.com/${tenantId}/${maintenanceId}`
+        (residentId, maintenanceId) => `https://pay.societypay.com/${residentId}/${maintenanceId}`
       );
       
       alert(`Reminders sent! Success: ${result.success}, Failed: ${result.failed}`);
@@ -176,7 +176,7 @@ export default function Notifications() {
     <div className="p-6 ml-64">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Notifications & Messaging</h1>
-        <p className="text-gray-600">Send WhatsApp messages and maintenance reminders to tenants</p>
+        <p className="text-gray-600">Send WhatsApp messages and maintenance reminders to residents</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -240,11 +240,11 @@ export default function Notifications() {
 
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">
-                  {selectedTenants.length} tenant(s) selected
+                  {selectedResidents.length} resident(s) selected
                 </span>
                 <button
                   onClick={handleSendMessage}
-                  disabled={sending || selectedTenants.length === 0 || !messageForm.message.trim()}
+                  disabled={sending || selectedResidents.length === 0 || !messageForm.message.trim()}
                   className="bg-secondary text-white px-6 py-2 rounded-md hover:bg-secondary/90 disabled:opacity-50 flex items-center"
                 >
                   <Send className="h-4 w-4 mr-2" />
@@ -307,24 +307,24 @@ export default function Notifications() {
                 onClick={handleSelectAll}
                 className="text-secondary hover:text-secondary/80 text-sm font-medium"
               >
-                {selectedTenants.length === tenants.length ? 'Deselect All' : 'Select All'}
+                {selectedResidents.length === residents.length ? 'Deselect All' : 'Select All'}
               </button>
             </div>
           </div>
           <div className="max-h-96 overflow-y-auto">
-            {tenants.map((tenant) => (
-              <div key={tenant.id} className="p-4 border-b border-gray-100 last:border-b-0">
+            {residents.map((resident) => (
+              <div key={resident.id} className="p-4 border-b border-gray-100 last:border-b-0">
                 <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={selectedTenants.includes(tenant.id)}
-                    onChange={() => handleTenantSelect(tenant.id)}
+                    checked={selectedResidents.includes(resident.id)}
+                    onChange={() => handleResidentSelect(resident.id)}
                     className="mr-3"
                   />
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">{tenant.name}</div>
-                    <div className="text-sm text-gray-500">{tenant.flatNumber}</div>
-                    <div className="text-xs text-gray-400">{tenant.phone}</div>
+                    <div className="text-sm font-medium text-gray-900">{resident.name}</div>
+                    <div className="text-sm text-gray-500">{resident.flatNumber}</div>
+                    <div className="text-xs text-gray-400">{resident.phone}</div>
                   </div>
                 </label>
               </div>

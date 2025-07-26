@@ -1,6 +1,6 @@
-// ✅ utils/subscriptionUtils.ts
+// ✅ utils/subscriptionUtils.js
 
-export const isFromPaymentFlow = (): boolean => {
+export const isFromPaymentFlow = () => {
     const recentPaymentSuccess = localStorage.getItem('recentPaymentSuccess');
     if (recentPaymentSuccess) {
       const paymentTimestamp = parseInt(recentPaymentSuccess);
@@ -14,7 +14,7 @@ export const isFromPaymentFlow = (): boolean => {
     return validDetected || fromPayment;
   };
   
-  export const markPaymentSuccess = (paymentId: string, community: any) => {
+  export const markPaymentSuccess = (paymentId, community) => {
     localStorage.setItem('recentPaymentSuccess', Date.now().toString());
     sessionStorage.setItem('validSubscriptionDetected', 'true');
     sessionStorage.setItem('fromPaymentSuccess', 'true');
@@ -37,7 +37,7 @@ export const isFromPaymentFlow = (): boolean => {
     console.log('🔓 Subscription bypass set');
   };
   
-  export const shouldBypassSubscriptionCheck = (): boolean => {
+  export const shouldBypassSubscriptionCheck = () => {
     const bypass = sessionStorage.getItem('bypassSubscriptionCheck') === 'true';
     const paymentFlow = isFromPaymentFlow();
     const status = sessionStorage.getItem('subscriptionStatus');
@@ -48,75 +48,5 @@ export const isFromPaymentFlow = (): boolean => {
   
     return (bypass || paymentFlow) && statusValid && endDateValid;
   };
-  
-  
-  // ✅ components/SubscriptionCheck.tsx
-  
-  import React, { useEffect, useState, useCallback } from 'react';
-  import { Navigate } from 'react-router-dom';
-  import { useAuth } from '../contexts/AuthContext';
-  import { communityService } from '../services/firebase';
-  import { shouldBypassSubscriptionCheck } from '../utils/subscriptionUtils';
-  
-  export default function SubscriptionCheck({ children }: { children: React.ReactNode }) {
-    const { userProfile } = useAuth();
-    const [loading, setLoading] = useState(true);
-    const [hasValidSubscription, setHasValidSubscription] = useState(false);
-  
-    const checkSubscription = useCallback(async () => {
-      if (!userProfile?.communityId) {
-        console.warn('❌ No communityId');
-        setHasValidSubscription(false);
-        setLoading(false);
-        return;
-      }
-  
-      try {
-        const community = await communityService.getCommunity(userProfile.communityId);
-        if (!community) {
-          console.warn('❌ Community not found');
-          setHasValidSubscription(false);
-          return;
-        }
-  
-        const { subscriptionEndDate, subscriptionStatus } = community;
-        const now = new Date();
-        const endDate =
-          typeof subscriptionEndDate?.toDate === 'function'
-            ? subscriptionEndDate.toDate()
-            : new Date(subscriptionEndDate);
-  
-        const isValid = subscriptionStatus === 'active' && endDate > now;
-        setHasValidSubscription(isValid);
-  
-        if (isValid) {
-          sessionStorage.setItem('subscriptionStatus', 'active');
-          sessionStorage.setItem('subscriptionEndDate', endDate.toISOString());
-        }
-      } catch (err) {
-        console.error('🔥 Subscription fetch error:', err);
-        setHasValidSubscription(false);
-      } finally {
-        setLoading(false);
-      }
-    }, [userProfile]);
-  
-    useEffect(() => {
-      checkSubscription();
-    }, [checkSubscription]);
-  
-    if (loading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      );
-    }
-  
-    if (!hasValidSubscription && !shouldBypassSubscriptionCheck()) {
-      return <Navigate to="/subscription-expired" replace />;
-    }
-  
-    return <>{children}</>;
-  }
+
   

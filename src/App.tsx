@@ -24,7 +24,7 @@ import SuperAdminSettings from './pages/SuperAdmin/Settings';
 
 import CommunityAdminDashboard from './pages/CommunityAdmin/Dashboard';
 import BlocksFlats from './pages/CommunityAdmin/BlocksFlats';
-import Tenants from './pages/CommunityAdmin/Tenants';
+import Residents from './pages/CommunityAdmin/Residents';
 import Maintenance from './pages/CommunityAdmin/Maintenance';
 import Notifications from './pages/CommunityAdmin/Notifications';
 import CommunityReports from './pages/CommunityAdmin/Reports';
@@ -126,9 +126,9 @@ function AppRoutes() {
           <AppLayout><BlocksFlats /></AppLayout>
         </SubscriptionProtectedRoute>
       } />
-      <Route path="/admin/tenants" element={
+      <Route path="/admin/residents" element={
         <SubscriptionProtectedRoute requiredRole="community_admin">
-          <AppLayout><Tenants /></AppLayout>
+          <AppLayout><Residents /></AppLayout>
         </SubscriptionProtectedRoute>
       } />
       <Route path="/admin/maintenance" element={

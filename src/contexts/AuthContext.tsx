@@ -17,7 +17,7 @@ import {
 import { auth } from "../firebase/config";
 import { userService } from "../services/firebase";
 
-type Role = "super_admin" | "community_admin" | "tenant";
+type Role = "super_admin" | "community_admin" | "resident";
 
 interface UserProfile {
   id: string;
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await userService.createUser(userCredential.user.uid, {
       email,
       ...userData,
-      role: userData.communityId ? "tenant" : "community_admin",
+      role: userData.communityId ? "resident" : "community_admin",
       isActive: true,
     });
   }, []);

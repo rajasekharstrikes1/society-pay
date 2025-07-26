@@ -2,8 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { Building2, CreditCard, MessageSquare, Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { communitySettingsService, communityService } from '../../services/firebase';
-import WhatsAppConfig from '../../components/WhatsApp/WhatsAppConfig';
-import MessageTemplates from '../../components/WhatsApp/MessageTemplates';
+import WhatsAppConfig from '../../components/whatsApp/WhatsAppConfig';
+import MessageTemplates from '../../components/whatsApp/MessageTemplates';
 
 // FIXED: Added proper type for WhatsApp config instead of using 'any'
 interface WhatsAppConfigData {

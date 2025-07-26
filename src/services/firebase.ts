@@ -15,7 +15,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { Community, Tenant, MaintenanceRecord, Payment, Subscription, User, Block, Flat, SubscriptionPayment, PlatformSettings } from '../types';
+import { Community, Resident, MaintenanceRecord, Payment, Subscription, User, Block, Flat, SubscriptionPayment, PlatformSettings } from '../types';
 
 // FIXED: Added proper type definition for community settings instead of 'any'
 interface CommunitySettings {
@@ -525,26 +525,26 @@ export const flatService = {
   }
 };
 
-// Tenant Services
-export const tenantService = {
-  async createTenant(tenantData: Omit<Tenant, 'id' | 'createdAt'>) {
+// Resident Services
+export const residentService = {
+  async createResident(residentData: Omit<Resident, 'id' | 'createdAt'>) {
     try {
-      const docRef = await addDoc(collection(db, 'tenants'), {
-        ...tenantData,
+      const docRef = await addDoc(collection(db, 'residents'), {
+        ...residentData,
         createdAt: serverTimestamp(),
       });
       return docRef.id;
     } catch (error) {
-      console.error('Error creating tenant:', error);
+      console.error('Error creating resident:', error);
       throw error;
     }
   },
 
-  async getTenants(communityId: string, limitCount?: number) {
+  async getResidents(communityId: string, limitCount?: number) {
     if (!communityId) throw new Error('Community ID is required');
     try {
       let q = query(
-        collection(db, 'tenants'), 
+        collection(db, 'residents'), 
         where('communityId', '==', communityId),
         orderBy('createdAt', 'desc')
       );
@@ -554,49 +554,49 @@ export const tenantService = {
         id: doc.id, 
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate() ?? null,
-      } as Tenant));
+      } as Resident));
     } catch (error) {
-      console.error('Error fetching tenants:', error);
+      console.error('Error fetching residents:', error);
       throw error;
     }
   },
 
-  async updateTenant(id: string, updates: Partial<Tenant>) {
-    if (!id) throw new Error('Tenant ID is required');
+  async updateResident(id: string, updates: Partial<Resident>) {
+    if (!id) throw new Error('Resident ID is required');
     try {
-      await updateDoc(doc(db, 'tenants', id), {
+      await updateDoc(doc(db, 'residents', id), {
         ...updates,
         updatedAt: serverTimestamp(),  // Added for consistency
       });
     } catch (error) {
-      console.error('Error updating tenant:', error);
+      console.error('Error updating resident:', error);
       throw error;
     }
   },
 
-  async deleteTenant(id: string) {
-    if (!id) throw new Error('Tenant ID is required');
+  async deleteResident(id: string) {
+    if (!id) throw new Error('Resident ID is required');
     try {
-      await deleteDoc(doc(db, 'tenants', id));
+      await deleteDoc(doc(db, 'residents', id));
     } catch (error) {
-      console.error('Error deleting tenant:', error);
+      console.error('Error deleting resident:', error);
       throw error;
     }
   },
 
-  async getTenantStats(communityId: string) {
+  async getResidentStats(communityId: string) {
     if (!communityId) throw new Error('Community ID is required');
     try {
-      const tenants = await this.getTenants(communityId);
-      const activeTenants = tenants.filter(t => t.isActive);
-      const totalMonthlyMaintenance = activeTenants.reduce((sum, t) => sum + (t.monthlyMaintenance ?? 0), 0);
+      const residents = await this.getResidents(communityId);
+      const activeResidents = residents.filter(t => t.isActive);
+      const totalMonthlyMaintenance = activeResidents.reduce((sum, t) => sum + (t.monthlyMaintenance ?? 0), 0);
       
       return {
-        totalTenants: activeTenants.length,
+        totalResidents: activeResidents.length,
         totalMonthlyMaintenance,
       };
     } catch (error) {
-      console.error('Error fetching tenant stats:', error);
+      console.error('Error fetching resident stats:', error);
       throw error;
     }
   }
@@ -621,7 +621,7 @@ export const maintenanceService = {
     status: string; 
     month: string; 
     year: number;
-    tenantId: string;
+    residentId: string;
   }>, limitCount?: number) {
     if (!communityId) throw new Error('Community ID is required');
     try {
@@ -633,7 +633,7 @@ export const maintenanceService = {
       if (filters?.status) q = query(q, where('status', '==', filters.status));
       if (filters?.month) q = query(q, where('month', '==', filters.month));
       if (filters?.year) q = query(q, where('year', '==', filters.year));
-      if (filters?.tenantId) q = query(q, where('tenantId', '==', filters.tenantId));
+      if (filters?.residentId) q = query(q, where('residentId', '==', filters.residentId));
       
       q = query(q, orderBy('createdAt', 'desc'));
       if (limitCount) q = query(q, limit(limitCount));
@@ -668,7 +668,7 @@ export const maintenanceService = {
   async generateMonthlyMaintenance(communityId: string, month: string, year: number) {
     if (!communityId || !month || !year) throw new Error('Required parameters missing');
     try {
-      const tenants = await tenantService.getTenants(communityId);
+      const residents = await residentService.getResidents(communityId);
       const community = await communityService.getCommunity(communityId);
       
       if (!community) throw new Error('Community not found');
@@ -681,19 +681,19 @@ export const maintenanceService = {
       const monthIndex = new Date(`${month} 1, ${year}`).getMonth();
       if (isNaN(monthIndex)) throw new Error('Invalid month string');
 
-      for (const tenant of tenants.filter(t => t.isActive)) {
+      for (const resident of residents.filter(t => t.isActive)) {
         const gstAmount = community.settings.charges.gstEnabled 
-          ? (tenant.monthlyMaintenance * community.settings.charges.gstPercentage) / 100 
+          ? (resident.monthlyMaintenance * community.settings.charges.gstPercentage) / 100 
           : 0;
         
-        const totalAmount = tenant.monthlyMaintenance + gstAmount + community.settings.charges.handlingCharges;
+        const totalAmount = resident.monthlyMaintenance + gstAmount + community.settings.charges.handlingCharges;
         
         const recordData = {
           communityId,
-          tenantId: tenant.id,
+          residentId: resident.id,
           month,
           year,
-          amount: tenant.monthlyMaintenance,
+          amount: resident.monthlyMaintenance,
           gstAmount,
           handlingCharges: community.settings.charges.handlingCharges,
           totalAmount,
@@ -973,13 +973,13 @@ export const dashboardService = {
   async getCommunityAdminStats(communityId: string) {
     if (!communityId) throw new Error('Community ID is required');
     try {
-      const [tenantStats, maintenanceStats] = await Promise.all([
-        tenantService.getTenantStats(communityId),
+      const [residentStats, maintenanceStats] = await Promise.all([
+        residentService.getResidentStats(communityId),
         maintenanceService.getMaintenanceStats(communityId)
       ]);
       
       return {
-        ...tenantStats,
+        ...residentStats,
         ...maintenanceStats,
       };
     } catch (error) {

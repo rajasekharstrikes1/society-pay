@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, Search, User, Phone, Mail, Home } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { tenantService, blockService } from '../../services/firebase';
-import { Tenant, Block } from '../../types';
+import { residentService, blockService } from '../../services/firebase';
+import { Resident, Block } from '../../types';
 
-export default function Tenants() {
+export default function Residents() {
   const { userProfile } = useAuth();
-  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [residents, setResidents] = useState<Resident[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [showModal, setShowModal] = useState(false);
-  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [editingResident, setEditingResident] = useState<Resident | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -30,12 +30,12 @@ export default function Tenants() {
 
     try {
       setLoading(true);
-      const [tenantsData, blocksData] = await Promise.all([
-        tenantService.getTenants(userProfile.communityId),
+      const [residentsData, blocksData] = await Promise.all([
+        residentService.getResidents(userProfile.communityId),
         blockService.getBlocks(userProfile.communityId)
       ]);
 
-      setTenants(tenantsData);
+      setResidents(residentsData);
       setBlocks(blocksData);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -56,7 +56,7 @@ export default function Tenants() {
     if (!userProfile?.communityId) return;
 
     try {
-      const tenantData = {
+      const residentData = {
         communityId: userProfile.communityId,
         blockId: formData.blockId,
         flatId: '', // This would be determined based on flat selection
@@ -68,42 +68,42 @@ export default function Tenants() {
         isActive: formData.isActive,
       };
 
-      if (editingTenant) {
-        await tenantService.updateTenant(editingTenant.id, tenantData);
+      if (editingResident) {
+        await residentService.updateResident(editingResident.id, residentData);
       } else {
-        await tenantService.createTenant(tenantData);
+        await residentService.createResident(residentData);
       }
 
       setShowModal(false);
-      setEditingTenant(null);
+      setEditingResident(null);
       resetForm();
       fetchData();
     } catch (error) {
-      console.error('Error saving tenant:', error);
+      console.error('Error saving resident:', error);
     }
   };
 
-  const handleEdit = (tenant: Tenant) => {
-    setEditingTenant(tenant);
+  const handleEdit = (resident: Resident) => {
+    setEditingResident(resident);
     setFormData({
-      name: tenant.name,
-      email: tenant.email,
-      phone: tenant.phone,
-      flatNumber: tenant.flatNumber,
-      blockId: tenant.blockId,
-      monthlyMaintenance: tenant.monthlyMaintenance.toString(),
-      isActive: tenant.isActive,
+      name: resident.name,
+      email: resident.email,
+      phone: resident.phone,
+      flatNumber: resident.flatNumber,
+      blockId: resident.blockId,
+      monthlyMaintenance: resident.monthlyMaintenance.toString(),
+      isActive: resident.isActive,
     });
     setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this tenant?')) return;
+    if (!confirm('Are you sure you want to delete this resident?')) return;
     try {
-      await tenantService.deleteTenant(id);
+      await residentService.deleteResident(id);
       fetchData();
     } catch (error) {
-      console.error('Error deleting tenant:', error);
+      console.error('Error deleting resident:', error);
     }
   };
 
@@ -119,14 +119,14 @@ export default function Tenants() {
     });
   };
 
-  const filteredTenants = tenants.filter(tenant => {
-    const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tenant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tenant.flatNumber.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredResidents = residents.filter(resident => {
+    const matchesSearch = resident.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         resident.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         resident.flatNumber.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesFilter = filterStatus === 'all' || 
-                         (filterStatus === 'active' && tenant.isActive) ||
-                         (filterStatus === 'inactive' && !tenant.isActive);
+                         (filterStatus === 'active' && resident.isActive) ||
+                         (filterStatus === 'inactive' && !resident.isActive);
 
     return matchesSearch && matchesFilter;
   });
@@ -146,19 +146,19 @@ export default function Tenants() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tenants Management</h1>
-            <p className="text-gray-600">Manage tenant information and maintenance charges</p>
+            <h1 className="text-2xl font-bold text-gray-900">Residents Management</h1>
+            <p className="text-gray-600">Manage resident information and maintenance charges</p>
           </div>
           <button
             onClick={() => {
               resetForm();
-              setEditingTenant(null);
+              setEditingResident(null);
               setShowModal(true);
             }}
             className="bg-secondary text-white px-4 py-2 rounded-md hover:bg-secondary/90 flex items-center"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Tenant
+            Add Resident
           </button>
         </div>
       </div>
@@ -170,7 +170,7 @@ export default function Tenants() {
             <Search className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search tenants..."
+              placeholder="Search residents..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent"
@@ -188,35 +188,35 @@ export default function Tenants() {
         </div>
       </div>
 
-      {/* Tenants Grid */}
+      {/* Residents Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTenants.map((tenant) => {
-          const block = blocks.find(b => b.id === tenant.blockId);
+        {filteredResidents.map((resident) => {
+          const block = blocks.find(b => b.id === resident.blockId);
           return (
-            <div key={tenant.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div key={resident.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
                   <User className="h-8 w-8 text-primary mr-3" />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{tenant.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{resident.name}</h3>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      tenant.isActive 
+                      resident.isActive 
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {tenant.isActive ? 'Active' : 'Inactive'}
+                      {resident.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </div>
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => handleEdit(tenant)}
+                    onClick={() => handleEdit(resident)}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <Edit className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(tenant.id)}
+                    onClick={() => handleDelete(resident.id)}
                     className="text-gray-400 hover:text-red-600"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -227,21 +227,21 @@ export default function Tenants() {
               <div className="space-y-3">
                 <div className="flex items-center text-sm text-gray-600">
                   <Home className="h-4 w-4 mr-2" />
-                  <span>{tenant.flatNumber} ({block?.name})</span>
+                  <span>{resident.flatNumber} ({block?.name})</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <Mail className="h-4 w-4 mr-2" />
-                  <span>{tenant.email}</span>
+                  <span>{resident.email}</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <Phone className="h-4 w-4 mr-2" />
-                  <span>{tenant.phone}</span>
+                  <span>{resident.phone}</span>
                 </div>
                 <div className="pt-2 border-t border-gray-200">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Monthly Maintenance</span>
                     <span className="text-lg font-semibold text-gray-900">
-                      ₹{tenant.monthlyMaintenance.toLocaleString()}
+                      ₹{resident.monthlyMaintenance.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -256,7 +256,7 @@ export default function Tenants() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
-              {editingTenant ? 'Edit Tenant' : 'Add New Tenant'}
+              {editingResident ? 'Edit Resident' : 'Add New Resident'}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -356,7 +356,7 @@ export default function Tenants() {
                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                     className="mr-2"
                   />
-                  <span className="text-sm font-medium text-gray-700">Active Tenant</span>
+                  <span className="text-sm font-medium text-gray-700">Active Resident</span>
                 </label>
               </div>
 
@@ -372,7 +372,7 @@ export default function Tenants() {
                   type="submit"
                   className="flex-1 bg-secondary text-white px-4 py-2 rounded-md hover:bg-secondary/90"
                 >
-                  {editingTenant ? 'Update' : 'Add'} Tenant
+                  {editingResident ? 'Update' : 'Add'} Resident
                 </button>
               </div>
             </form>

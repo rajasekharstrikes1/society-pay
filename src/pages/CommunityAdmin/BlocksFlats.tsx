@@ -12,8 +12,8 @@ interface Flat {
   id: string;
   blockId: string;
   flatNumber: string;
-  tenantId?: string;
-  tenantName?: string;
+  residentId?: string;
+  residentName?: string;
   isOccupied: boolean;
   createdAt: Date;
 }
@@ -49,10 +49,10 @@ export default function BlocksFlats() {
       ];
 
       const mockFlats: Flat[] = [
-        { id: '1', blockId: '1', flatNumber: 'A-101', isOccupied: true, tenantName: 'John Doe', createdAt: new Date() },
+        { id: '1', blockId: '1', flatNumber: 'A-101', isOccupied: true, residentName: 'John Doe', createdAt: new Date() },
         { id: '2', blockId: '1', flatNumber: 'A-102', isOccupied: false, createdAt: new Date() },
-        { id: '3', blockId: '1', flatNumber: 'A-103', isOccupied: true, tenantName: 'Jane Smith', createdAt: new Date() },
-        { id: '4', blockId: '2', flatNumber: 'B-101', isOccupied: true, tenantName: 'Bob Johnson', createdAt: new Date() },
+        { id: '3', blockId: '1', flatNumber: 'A-103', isOccupied: true, residentName: 'Jane Smith', createdAt: new Date() },
+        { id: '4', blockId: '2', flatNumber: 'B-101', isOccupied: true, residentName: 'Bob Johnson', createdAt: new Date() },
         { id: '5', blockId: '2', flatNumber: 'B-102', isOccupied: false, createdAt: new Date() },
       ];
 
@@ -301,7 +301,7 @@ export default function BlocksFlats() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {flat.tenantName || 'Vacant'}
+                            {flat.residentName || 'Vacant'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
